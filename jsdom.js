@@ -18,6 +18,64 @@ class Component {
   }
 }
 
+var jsdomTemporaryExpressionHandler = {
+    getFromBetween:function (sub1,sub2) {
+        if(this.string.indexOf(sub1) < 0 || this.string.indexOf(sub2) < 0) return false;
+        var SP = this.string.indexOf(sub1)+sub1.length;
+        var string1 = this.string.substr(0,SP);
+        var string2 = this.string.substr(SP);
+        var TP = string1.length + string2.indexOf(sub2);
+        return this.string.substring(SP,TP);
+    },
+    removeFromBetween:function (sub1,sub2) {
+        if(this.string.indexOf(sub1) < 0 || this.string.indexOf(sub2) < 0) return false;
+        var removal = sub1+this.getFromBetween(sub1,sub2)+sub2;
+        this.string = this.string.replace(removal,this.uuid);
+    },
+		uuidv4: function() {
+    	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, 	function (c) {
+      	var r = Math.random() * 16 | 0,
+        	v = c == 'x' ? r : (r & 0x3 | 0x8);
+      	return v.toString(16);
+    	});
+  	},
+    getAllResults:function (sub1,sub2) {
+        // first check to see if we do have both substrings
+        if(this.string.indexOf(sub1) < 0 || this.string.indexOf(sub2) < 0) this.results = {"exprs": [], "map": [], "str": this.string};
+
+        // find one result
+				this.uuid = this.uuidv4();
+        var result = this.getFromBetween(sub1,sub2);
+        // push it to the results array
+				this.removeFromBetween(sub1,sub2);
+        this.results["exprs"].push(result);
+				this.results["str"] = (this.string);
+				this.results["map"].push(this.uuid);
+        // remove the most recently found one from the string
+
+        // if there's more substrings
+        if(this.string.indexOf(sub1) > -1 && this.string.indexOf(sub2) > -1) {
+            this.getAllResults(sub1,sub2);
+						// this.results[this.results.length - 1]["key"] = this.string
+						this.results.str = this.string;
+        }
+        else return;
+    },
+    parse:function (string,sub=["{{", "}}"]) {
+        this.results = {"exprs": [], "map": [], "str": ""};
+        this.string = string;
+        this.getAllResults(sub[0], sub[1]);
+        return this.results;
+    },
+		evalReplace:function (obj) {
+			let returnStr = obj["str"];
+			for (var i in obj["map"]) {
+				returnStr = returnStr.replace(obj["map"][i], eval(obj["exprs"][i]))
+			}
+			return returnStr;
+		}
+};
+
 class JsDom {
   /* Stop rendering interval */
   static haltRender() {
@@ -32,9 +90,9 @@ class JsDom {
       /* loop through component's children */
       for (var i in component.children) {
         /* Only update element if contents are not equal */
-        if (JsDom.evalReplace(JsDom.parse(elem.innerHTML, parseSymbs)) !== JsDom.evalReplace(JsDom.parse(renderElem.innerHTML, parseSymbs))) {
+        if (jsdomTemporaryExpressionHandler.evalReplace(jsdomTemporaryExpressionHandler.parse(elem.innerHTML, parseSymbs)) !== jsdomTemporaryExpressionHandler.evalReplace(jsdomTemporaryExpressionHandler.parse(renderElem.innerHTML, parseSymbs))) {
           /* If so, update HTML */
-          renderElem.innerHTML = JsDom.evalReplace(JsDom.parse(elem.innerHTML, parseSymbs));
+          renderElem.innerHTML = jsdomTemporaryExpressionHandler.evalReplace(jsdomTemporaryExpressionHandler.parse(elem.innerHTML, parseSymbs));
         }
       }
     }, 2.5);
