@@ -50,23 +50,31 @@ var j = JsDom.extend(function(tagName, children = [""], attributes = {}) {
 	return new Component(...[tagName, children, attributes]);
 },
 	toElem: function(component) {
-		let elem = document.createElement(component.tagName);
+    let elem;
     if (component instanceof Component) {
+      elem = document.createElement(component.tagName);
 		  for(var i in component.attributes) {
 		  	elem.setAttribute(i, component.attributes[i])
 		  }
 		  for(var i in component.children) {
 		  	if(typeof component.children[i] === "string") {
 		  		elem.append(component.children[i]);
-		  	} else if(component.children[i] instanceof Component) {
+		  	} 
+        else if (component.children[i] instanceof Array) {
+          elem.append(j.toElem(new Component("div", component.children[i])));
+        }
+        else if(component.children[i] instanceof Component) {
 		  		elem.append(j.toElem(component.children[i]));
 		  	}
 		  }
     }
-    else if (component instanceof string) {
+    else if (component instanceof Array) {
+      elem = j.toElem(new Component("div", component));
+    }
+    else if (typeof component === "string") {
       for (var i in component) {
-
-      } 
+        elem = document.createTextNode(component[i]);
+      }
     }
 		return elem
 	},
