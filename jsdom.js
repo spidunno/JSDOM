@@ -40,18 +40,20 @@ class JsDom {
     }, 2.5);
   }
   /* Convert a string containing HTML into a component/components */
-  static html(html) {
-    /* Use built in DOMParser API to parse string into HTML Element */
-    let parsed = new DOMParser().parseFromString(html, 'text/html').body.childNodes;
-    /* Initialize array to add components to */
-    let comp = [];
-    /* Loop through all child nodes of parsed HTML */
-    for (var i in parsed) {
-      /* Create and push a new component with all of the element's data into comp */
-      comp.push(new Component(parsed[i].localName, parsed[i], parsed[i][0]));
+  static html(html, enable=false) {
+    if (enable) {
+      var template = document.createElement('template');
+      let toReturn = [];
+      template.innerHTML = html;
+      console.log(Array.from(template.content.children))
+      console.log(Array.from(template.content.children)[0]  instanceof HTMLElement);
+      let arr = Array.from(template.content.children);
+      for (var i in arr) {
+        toReturn.push(new Component(arr[i].localName, arr[i]  .innerHTML, arr[i].attributes));
+      }
+      return arr
     }
-    /* return a div component containing all of the other components */
-    return new Component("div", comp);
+    console.log("WARNING: THIS IS EXTREMELY EXPERIEMENTAL AND WILL NOT WORK\nUSE AT YOUR OWN RISK");
   }
   /* UUID function for use in parsing text; Taken from https://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid */
   static uuidv4() {
@@ -108,7 +110,10 @@ class JsDom {
     }
     /* if the component is an array run this function again with a component whos children is said array, and append that to the element */
     else if (component instanceof Array) {
-      elem = JsDom.toElem(new Component("div", component));
+      for (var i in component) {
+        elem = document.createElement('div');
+        elem.append = JsDom.toElem(component[i]);
+      }
     }
     /* if the component is a string, append a new text node to the element */
     else if (typeof component === "string") {
@@ -116,6 +121,11 @@ class JsDom {
         elem = document.createTextNode(component[i]);
       }
     }
+    // /* check if component is an HTMLElement */
+    // else if (component instanceof HTMLElement) {
+    //   /* if so, append component to elem */
+    //   elem.append(component);
+    // }
     /* return the element */
     return elem
   }
